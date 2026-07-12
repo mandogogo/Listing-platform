@@ -1,0 +1,396 @@
+// ============================================
+// Listing Platform - MVP Schema (Phase 1)
+// Businesses / Factories / Shops Directory
+// Built for future expansion: Jobs, Quote Requests
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 1. USERS
+// ============================================
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  phone         String?  @unique
+  passwordHash  String
+  countryId     String?
+  cityId        String?
+  language      String   @default("ar") // ar | en
+  status        UserStatus @default(ACTIVE)
+  platformRole  PlatformRole @default(USER)
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  country       Country? @relation(fields: [countryId], references: [id])
+  city          City?    @relation(fields: [cityId], references: [id])
+
+  organizationMembers OrganizationMember[]
+  listings            Listing[]
+  media               Media[]
+  contactsSent        ContactRequest[]
+  favorites           Favorite[]
+
+  @@index([email])
+  @@index([phone])
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum PlatformRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+// ============================================
+// 2. ORGANIZATIONS
+// ============================================
+
+model Organization {
+  id                String   @id @default(uuid())
+  nameAr            String
+  nameEn            String
+  legalName         String?
+  type              String   // company | factory | shop | restaurant | clinic | office ...
+  descriptionAr     String?
+  descriptionEn     String?
+  foundedYear       Int?
+  employeeRange     String?  // "1-10" | "11-50" | "51-200" ...
+  licenseNumber     String?
+
+  countryId         String
+  cityId            String
+  areaText          String?  // free-text area/district until Areas table is needed
+  address           String?
+  latitude          Float?
+  longitude         Float?
+
+  website           String?
+  phone             String?
+  whatsapp          String?
+  email             String?
+
+  logoMediaId       String?
+  coverMediaId      String?
+
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  publishStatus      PublishStatus      @default(DRAFT)
+  claimStatus         ClaimStatus       @default(UNCLAIMED)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  country           Country  @relation(fields: [countryId], references: [id])
+  city              City     @relation(fields: [cityId], references: [id])
+
+  members           OrganizationMember[]
+  listings          Listing[]
+  categories        ListingCategory[]  @relation("OrgCategories")
+  media             Media[]
+  workingHours      WorkingHour[]
+  contactRequests   ContactRequest[]
+  favorites         Favorite[]
+
+  @@index([cityId])
+  @@index([countryId])
+  @@index([publishStatus])
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum PublishStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  SUSPENDED
+  ARCHIVED
+}
+
+enum ClaimStatus {
+  UNCLAIMED
+  CLAIM_PENDING
+  CLAIMED
+}
+
+model OrganizationMember {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  role           OrgRole  @default(ADMIN)
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  EDITOR
+  SUPPORT
+}
+
+model WorkingHour {
+  id             String   @id @default(uuid())
+  organizationId String
+  dayOfWeek      Int      // 0 = Sunday ... 6 = Saturday
+  openTime       String?  // "09:00"
+  closeTime      String?  // "18:00"
+  isClosed       Boolean  @default(false)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, dayOfWeek])
+}
+
+// ============================================
+// 3. LISTINGS (generic publishing layer)
+// Phase 1 only uses listingType = BUSINESS
+// Ready for JOB / QUOTE_REQUEST later
+// ============================================
+
+model Listing {
+  id             String      @id @default(uuid())
+  listingType    ListingType @default(BUSINESS)
+  ownerUserId    String
+  organizationId String?
+
+  title          String
+  slug           String      @unique
+  shortDescription String?
+
+  status         PublishStatus @default(DRAFT)
+  isFeatured     Boolean     @default(false)
+  isVerified     Boolean     @default(false)
+
+  countryId      String
+  cityId         String
+
+  publishedAt    DateTime?
+  expiresAt      DateTime?
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  owner          User          @relation(fields: [ownerUserId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  country        Country       @relation(fields: [countryId], references: [id])
+  city           City          @relation(fields: [cityId], references: [id])
+
+  categories     ListingCategory[]
+  media          Media[]
+  contactRequests ContactRequest[]
+  favorites      Favorite[]
+
+  // Phase 2 (not used yet, kept for future extension without migration pain):
+  // jobDetails         JobListingDetail?
+  // quoteRequestDetails QuoteRequestDetail?
+
+  @@index([listingType])
+  @@index([status])
+  @@index([cityId])
+  @@index([slug])
+}
+
+enum ListingType {
+  BUSINESS
+  JOB            // Phase 2
+  QUOTE_REQUEST  // Phase 3
+}
+
+// ============================================
+// 4. CATEGORIES (hierarchical, many-to-many)
+// ============================================
+
+model Category {
+  id           String   @id @default(uuid())
+  nameAr       String
+  nameEn       String
+  slug         String   @unique
+  parentId     String?
+  categoryType CategoryType @default(BUSINESS)
+  icon         String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+
+  parent       Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children     Category[] @relation("CategoryTree")
+
+  listings     ListingCategory[]
+
+  @@index([parentId])
+  @@index([categoryType])
+}
+
+enum CategoryType {
+  BUSINESS
+  JOB
+  SERVICE
+}
+
+// Join table: many-to-many Listing <-> Category
+model ListingCategory {
+  id             String   @id @default(uuid())
+  listingId      String?
+  categoryId     String
+  organizationId String?  // allows tagging an org directly, in addition to its listing
+
+  listing        Listing?      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  category       Category      @relation(fields: [categoryId], references: [id])
+  organization   Organization? @relation("OrgCategories", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, categoryId])
+}
+
+// ============================================
+// 5. LOCATIONS
+// ============================================
+
+model Country {
+  id     String @id @default(uuid())
+  nameAr String
+  nameEn String
+  code   String @unique // "AE", "SA", "EG"
+
+  cities        City[]
+  users         User[]
+  organizations Organization[]
+  listings      Listing[]
+}
+
+model City {
+  id        String @id @default(uuid())
+  countryId String
+  nameAr    String
+  nameEn    String
+  slug      String @unique
+  latitude  Float?
+  longitude Float?
+
+  country       Country        @relation(fields: [countryId], references: [id])
+  users         User[]
+  organizations Organization[]
+  listings      Listing[]
+
+  @@index([countryId])
+}
+
+// ============================================
+// 6. MEDIA
+// ============================================
+
+model Media {
+  id             String   @id @default(uuid())
+  url            String
+  type           MediaType @default(IMAGE)
+  altText        String?
+  sortOrder      Int      @default(0)
+  isPrimary      Boolean  @default(false)
+
+  uploadedByUserId String?
+  organizationId   String?
+  listingId        String?
+
+  createdAt      DateTime @default(now())
+
+  uploadedBy     User?         @relation(fields: [uploadedByUserId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  listing        Listing?      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([listingId])
+}
+
+enum MediaType {
+  IMAGE
+  LOGO
+  COVER
+  DOCUMENT
+  VIDEO
+}
+
+// ============================================
+// 7. CONTACT REQUESTS (simple lead capture)
+// ============================================
+
+model ContactRequest {
+  id             String   @id @default(uuid())
+  organizationId String
+  listingId      String?
+  fromUserId     String?  // null if guest/unauthenticated visitor
+
+  guestName      String?
+  guestEmail     String?
+  guestPhone     String?
+
+  channel        ContactChannel @default(FORM)
+  message        String?
+  status         LeadStatus @default(NEW)
+
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  listing        Listing?     @relation(fields: [listingId], references: [id])
+  fromUser       User?        @relation(fields: [fromUserId], references: [id])
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+enum ContactChannel {
+  FORM
+  PHONE_CLICK
+  WHATSAPP_CLICK
+  EMAIL_CLICK
+  DIRECTIONS_CLICK
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  CLOSED
+}
+
+// ============================================
+// 8. FAVORITES (simple save-for-later)
+// ============================================
+
+model Favorite {
+  id             String   @id @default(uuid())
+  userId         String
+  organizationId String?
+  listingId      String?
+  createdAt      DateTime @default(now())
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  listing        Listing?      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId, listingId])
+}

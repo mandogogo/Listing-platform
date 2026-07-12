@@ -1,0 +1,29 @@
+{
+  "common": {
+    "search": "بحث",
+    "searchPlaceholder": "ابحث عن شركة، مصنع، أو محل...",
+    "categories": "التصنيفات",
+    "location": "الموقع",
+    "contact": "تواصل",
+    "call": "اتصال",
+    "whatsapp": "واتساب",
+    "directions": "الاتجاهات",
+    "verified": "موثّق",
+    "loading": "جاري التحميل...",
+    "noResults": "لا توجد نتائج"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "browse": "تصفح الشركات",
+    "addBusiness": "أضف شركتك",
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب"
+  },
+  "business": {
+    "aboutUs": "نبذة عنا",
+    "workingHours": "ساعات العمل",
+    "gallery": "معرض الصور",
+    "sendMessage": "أرسل رسالة",
+    "claimThisBusiness": "هل أنت صاحب هذا النشاط؟ قم بالمطالبة بالصفحة"
+  }
+}

@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-plex-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-plex-arabic: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-plex-mono: "IBM Plex Mono", monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #efe8d9;
+  color: #22262b;
+}
+
+/* Ledger-style hairline divider — used between category rows, not decoration */
+.ledger-rule {
+  border-top: 1px solid rgba(20, 33, 61, 0.15);
+}
+
+/* Verification seal — the signature element. A circular stamp, not a badge pill. */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  border: 1.5px solid #1b6b63;
+  color: #1b6b63;
+  position: relative;
+}
+
+.seal::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 9999px;
+  border: 1px dashed rgba(27, 107, 99, 0.5);
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Visible keyboard focus, always */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #b5652f;
+  outline-offset: 2px;
+}

@@ -1,0 +1,29 @@
+{
+  "common": {
+    "search": "Search",
+    "searchPlaceholder": "Search for a company, factory, or shop...",
+    "categories": "Categories",
+    "location": "Location",
+    "contact": "Contact",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "directions": "Directions",
+    "verified": "Verified",
+    "loading": "Loading...",
+    "noResults": "No results found"
+  },
+  "nav": {
+    "home": "Home",
+    "browse": "Browse Businesses",
+    "addBusiness": "Add Your Business",
+    "login": "Log In",
+    "signup": "Sign Up"
+  },
+  "business": {
+    "aboutUs": "About Us",
+    "workingHours": "Working Hours",
+    "gallery": "Gallery",
+    "sendMessage": "Send Message",
+    "claimThisBusiness": "Are you the owner? Claim this business"
+  }
+}
