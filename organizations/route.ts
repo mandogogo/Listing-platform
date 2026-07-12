@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     prisma.organization.count({ where }),
   ]);
 
-  const data = organizations.map((org) => ({
+  const data = organizations.map((org: (typeof organizations)[number]) => ({
     id: org.id,
     name: localize(org, "name", locale),
     description: localize(org, "description", locale),
