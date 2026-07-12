@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "asc" },
   });
 
-  const data = organizations.map((org) => ({
+  const data = organizations.map((org: (typeof organizations)[number]) => ({
     id: org.id,
     name: localize(org, "name", locale),
     description: localize(org, "description", locale),
